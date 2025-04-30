@@ -28,7 +28,8 @@ export default function Home() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
+    setRoutine("⏳ Generating your routine...");
+  
     try {
       const res = await fetch("/api/generate-routine", {
         method: "POST",
@@ -37,12 +38,17 @@ export default function Home() {
         },
         body: JSON.stringify(formData)
       });
-
+  
       const data = await res.json();
-      setRoutine(data.result || "No routine generated.");
-    } catch (error) {
-      console.error(error);
-      setRoutine("Failed to generate routine.");
+  
+      if (data.error) {
+        setRoutine(`❌ Error: ${data.error}`);
+      } else {
+        setRoutine(data.result || "⚠️ No routine was generated.");
+      }
+  
+    } catch (error: any) {
+      setRoutine(`❌ Unexpected error: ${error.message || "Unknown error"}`);
     } finally {
       setLoading(false);
     }
