@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   const body = await req.json();
+  console.log("🧾 Incoming request data:", body);
 
   const { primaryFocus, secondaryFocus, effortLevel, tools, time } = body;
 
@@ -26,11 +27,13 @@ Use Prompt Guideline v1.1 principles. Prioritize active mobility, not yoga or pa
 `;
 
   try {
+    console.log("🚀 Sending request to OpenAI");
+
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}",
       },
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
@@ -43,11 +46,24 @@ Use Prompt Guideline v1.1 principles. Prioritize active mobility, not yoga or pa
     });
 
     const data = await res.json();
-    const result = data.choices?.[0]?.message?.content || "No routine generated.";
+    console.log("🤖 Full OpenAI data:", data);
+
+    if (data.error) {
+      console.error("❌ OpenAI Error:", data.error.message);
+      return NextResponse.json({ error: data.error.message }, { status: 500 });
+    }
+
+    const result = data.choices?.[0]?.message?.content;
+
+    if (!result || result.trim() === "") {
+      return NextResponse.json({
+        result: "⚠️ OpenAI responded, but no routine was generated. Try again or modify your input."
+      });
+    }
 
     return NextResponse.json({ result });
   } catch (error) {
-    console.error("API error:", error);
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+    console.error("🔥 API call failed:", error);
+    return NextResponse.json({ error: "Something went wrong while talking to OpenAI." }, { status: 500 });
   }
 }
