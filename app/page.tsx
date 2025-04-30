@@ -123,9 +123,9 @@ export default function Home() {
         </button>
       </form>
 
-      <div className="mt-10 p-4 border rounded bg-gray-100">
-        {routine}
-      </div>
+      <div className="mt-10 p-4 border rounded bg-gray-100 text-gray-900 whitespace-pre-wrap">
+  {routine}
+</div>
     </main>
   );
 }
