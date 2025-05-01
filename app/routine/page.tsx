@@ -1,4 +1,3 @@
-// app/routine/page.tsx – Cleaned up and API-connected version
 "use client"
 
 import { useState, useEffect } from "react"
@@ -21,63 +20,46 @@ const mockRoutine = [
     stage: "Main",
     title: "Standing Shoulder PAILs/RAILs",
     duration: "3 sets • 10 sec holds",
-    instructions: [
-      "Press hand into wall at end range",
-      "Engage scapular control",
-      "Switch to RAILs contraction",
-    ],
+    instructions: ["Press hand into wall at end range", "Engage scapular control", "Switch to RAILs contraction"],
   },
   {
     stage: "Cooldown",
     title: "Supine Hip Windshield Wipers",
     duration: "2 mins",
-    instructions: [
-      "Lie down with knees bent",
-      "Gently rotate knees side to side",
-      "Exhale during each rotation",
-    ],
+    instructions: ["Lie down with knees bent", "Gently rotate knees side to side", "Exhale during each rotation"],
   },
 ]
 
-interface Exercise {
-  stage: string
-  title: string
-  duration: string
-  instructions: string[]
-}
-
 export default function RoutinePage() {
   const [current, setCurrent] = useState(0)
-  const [routineData, setRoutineData] = useState<Exercise[]>(mockRoutine)
+  const [routineData, setRoutineData] = useState(mockRoutine)
   const total = routineData.length
 
+  // Load routine data from localStorage on component mount
   useEffect(() => {
-    const fetchRoutine = async () => {
-      try {
-        const res = await fetch("/api/generate-routine", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            effort: "Restore",
-            primaryFocus: "hips",
-            secondaryFocus: "shoulders",
-            time: "20 minutes",
-            notes: "I’ve been sitting all day",
-          }),
-        })
+    // Only run in the browser
+    if (typeof window !== "undefined") {
+      const savedRoutine = localStorage.getItem("routineData")
+      if (savedRoutine) {
+        try {
+          // Parse the saved routine data
+          // Note: You may need to adjust this based on your API's response format
+          const parsedRoutine = JSON.parse(savedRoutine)
 
-        const data = await res.json()
-        if (Array.isArray(data.routine)) {
-          setRoutineData(data.routine)
-        } else {
-          console.warn("API did not return a structured routine array. Using mock.")
+          // If your API returns a different format, you'll need to transform it
+          // This is just an example - adjust according to your actual API response
+          if (Array.isArray(parsedRoutine)) {
+            setRoutineData(parsedRoutine)
+          } else if (typeof parsedRoutine === "string") {
+            // If it's a string, you might need to parse it further or display differently
+            // For now, we'll keep using the mock data
+            console.log("Routine data is a string:", parsedRoutine)
+          }
+        } catch (error) {
+          console.error("Error parsing routine data:", error)
         }
-      } catch (err) {
-        console.error("Failed to fetch routine:", err)
       }
     }
-
-    fetchRoutine()
   }, [])
 
   const next = () => setCurrent((prev) => (prev + 1) % total)
@@ -85,9 +67,15 @@ export default function RoutinePage() {
 
   const exercise = routineData[current]
 
-  const handleDragEnd = (_: any, { offset }: { offset: { x: number } }) => {
-    if (offset.x < -50) next()
-    else if (offset.x > 50) prev()
+  // Swipe handlers
+  const handleDragEnd = (e: any, { offset, velocity }: any) => {
+    const swipe = offset.x
+
+    if (swipe < -50) {
+      next()
+    } else if (swipe > 50) {
+      prev()
+    }
   }
 
   return (
@@ -121,9 +109,7 @@ export default function RoutinePage() {
               >
                 <div className="bg-gray-50 p-8 rounded-lg h-full">
                   <div className="flex justify-between items-start mb-6">
-                    <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-                      {exercise.stage}
-                    </p>
+                    <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">{exercise.stage}</p>
                     <span className="text-xs bg-gray-200 px-3 py-1 rounded-full">
                       {current + 1}/{total}
                     </span>
