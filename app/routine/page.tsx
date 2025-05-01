@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 
-// Default mock data in case there's no data from the API
 const mockRoutine = [
   {
     stage: "Warm-up",
@@ -33,49 +32,44 @@ const mockRoutine = [
 export default function RoutinePage() {
   const [current, setCurrent] = useState(0)
   const [routineData, setRoutineData] = useState(mockRoutine)
-  const total = routineData.length
 
-  // Load routine data from localStorage on component mount
-  useEffect(() => {
-    // Only run in the browser
-    if (typeof window !== "undefined") {
-      const savedRoutine = localStorage.getItem("routineData")
-      if (savedRoutine) {
-        try {
-          // Parse the saved routine data
-          // Note: You may need to adjust this based on your API's response format
-          const parsedRoutine = JSON.parse(savedRoutine)
+  const fetchRoutine = async () => {
+    try {
+      const res = await fetch("/api/generate-routine", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          effort: "Restore",
+          primaryFocus: "hips",
+          secondaryFocus: "shoulders",
+          time: "20 minutes",
+          notes: "I've been sitting all day",
+        }),
+      })
 
-          // If your API returns a different format, you'll need to transform it
-          // This is just an example - adjust according to your actual API response
-          if (Array.isArray(parsedRoutine)) {
-            setRoutineData(parsedRoutine)
-          } else if (typeof parsedRoutine === "string") {
-            // If it's a string, you might need to parse it further or display differently
-            // For now, we'll keep using the mock data
-            console.log("Routine data is a string:", parsedRoutine)
-          }
-        } catch (error) {
-          console.error("Error parsing routine data:", error)
-        }
+      const data = await res.json()
+      if (Array.isArray(data.routine)) {
+        setRoutineData(data.routine)
+        setCurrent(0)
+      } else {
+        console.warn("No routine returned. Using mock.")
       }
+    } catch (error) {
+      console.error("Error fetching routine:", error)
     }
+  }
+
+  useEffect(() => {
+    fetchRoutine()
   }, [])
 
-  const next = () => setCurrent((prev) => (prev + 1) % total)
-  const prev = () => setCurrent((prev) => (prev - 1 + total) % total)
-
+  const next = () => setCurrent((prev) => (prev + 1) % routineData.length)
+  const prev = () => setCurrent((prev) => (prev - 1 + routineData.length) % routineData.length)
   const exercise = routineData[current]
 
-  // Swipe handlers
-  const handleDragEnd = (e: any, { offset, velocity }: any) => {
-    const swipe = offset.x
-
-    if (swipe < -50) {
-      next()
-    } else if (swipe > 50) {
-      prev()
-    }
+  const handleDragEnd = (_: any, { offset }: { offset: { x: number } }) => {
+    if (offset.x < -50) next()
+    else if (offset.x > 50) prev()
   }
 
   return (
@@ -111,7 +105,7 @@ export default function RoutinePage() {
                   <div className="flex justify-between items-start mb-6">
                     <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">{exercise.stage}</p>
                     <span className="text-xs bg-gray-200 px-3 py-1 rounded-full">
-                      {current + 1}/{total}
+                      {current + 1}/{routineData.length}
                     </span>
                   </div>
 
