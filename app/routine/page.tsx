@@ -35,7 +35,7 @@ export default function RoutinePage() {
 
   const fetchRoutine = async () => {
     try {
-      const res = await fetch("/api/generate-routine", {
+      const res = await fetch("https://nimble-l8wmm3v0d-anggakaras-projects.vercel.app/api/generate-routine", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -52,7 +52,7 @@ export default function RoutinePage() {
         setRoutineData(data.routine)
         setCurrent(0)
       } else {
-        console.warn("No routine returned. Using mock.")
+        console.warn("No routine returned. Using mock. Raw response:", data)
       }
     } catch (error) {
       console.error("Error fetching routine:", error)
