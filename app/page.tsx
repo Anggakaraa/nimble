@@ -1,239 +1,155 @@
 "use client"
 
-import type React from "react"
+import { useState, useEffect } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import Link from "next/link"
 
-import { useState } from "react"
-import { Loader2 } from "lucide-react"
+const mockRoutine = [
+  {
+    stage: "Warm-up",
+    title: "Seated Thoracic CARs",
+    duration: "2 mins",
+    instructions: [
+      "Sit upright with neutral spine",
+      "Slowly rotate thoracic spine with breath",
+      "Avoid moving shoulders",
+    ],
+  },
+  {
+    stage: "Main",
+    title: "Standing Shoulder PAILs/RAILs",
+    duration: "3 sets • 10 sec holds",
+    instructions: ["Press hand into wall at end range", "Engage scapular control", "Switch to RAILs contraction"],
+  },
+  {
+    stage: "Cooldown",
+    title: "Supine Hip Windshield Wipers",
+    duration: "2 mins",
+    instructions: ["Lie down with knees bent", "Gently rotate knees side to side", "Exhale during each rotation"],
+  },
+]
 
-export default function Page() {
-  const [effort, setEffort] = useState("")
-  const [primaryFocus, setPrimaryFocus] = useState("")
-  const [secondaryFocus, setSecondaryFocus] = useState("")
-  const [time, setTime] = useState("")
-  const [notes, setNotes] = useState("")
-  const [loading, setLoading] = useState(false)
+export default function RoutinePage() {
+  const [current, setCurrent] = useState(0)
+  const [routineData, setRoutineData] = useState(mockRoutine)
 
-  const focusOptions = ["Hips", "Ankle & Knee", "Shoulder & Wrist", "Spine"]
-  const timeOptions = ["<30 minutes", "30-45 minutes", ">45 minutes"]
-  const effortOptions = ["Restore", "Build", "Push"]
-
-  // Use environment variable for API URL
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://your-default-api-url.vercel.app"
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-
+  const fetchRoutine = async () => {
     try {
-      const res = await fetch(`${apiUrl}/api/generate-routine`, {
+      const res = await fetch("https://nimble-l8wmm3v0d-anggakaras-projects.vercel.app/api/generate-routine", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ effort, primaryFocus, secondaryFocus, time, notes }),
+        body: JSON.stringify({
+          effort: "Restore",
+          primaryFocus: "hips",
+          secondaryFocus: "shoulders",
+          time: "20 minutes",
+          notes: "I've been sitting all day",
+        }),
       })
 
       const data = await res.json()
-
-      // Store the routine data in localStorage to access it on the routine page
-      localStorage.setItem("routineData", JSON.stringify(data.result))
-
-      // Redirect to the routine page
-      window.location.href = "/routine"
-    } catch (err) {
-      console.error("Error generating routine:", err)
-      setLoading(false)
-      alert("An error occurred while generating your routine. Please try again.")
+      if (Array.isArray(data.routine)) {
+        setRoutineData(data.routine)
+        setCurrent(0)
+      } else {
+        console.warn("No routine returned. Using mock. Raw response:", data)
+      }
+    } catch (error) {
+      console.error("Error fetching routine:", error)
     }
+  }
+
+  useEffect(() => {
+    fetchRoutine()
+  }, [])
+
+  const next = () => setCurrent((prev) => (prev + 1) % routineData.length)
+  const prev = () => setCurrent((prev) => (prev - 1 + routineData.length) % routineData.length)
+  const exercise = routineData[current]
+
+  const handleDragEnd = (_: any, { offset }: { offset: { x: number } }) => {
+    if (offset.x < -50) next()
+    else if (offset.x > 50) prev()
   }
 
   return (
     <div className="min-h-screen bg-white">
-      <header className="px-6 py-8 max-w-3xl mx-auto">
+      <header className="px-6 py-8 max-w-3xl mx-auto flex items-center justify-between">
         <h1 className="text-2xl font-medium text-black">Nimble</h1>
+        <Link href="/" className="text-sm text-gray-500 hover:text-black transition-colors">
+          New Routine
+        </Link>
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-4">
-        <h2 className="text-3xl font-normal text-black mb-12">Let's get 1% more nimble everyday!</h2>
+        <div className="mb-12">
+          <h2 className="text-3xl font-normal text-black mb-1">Your Routine</h2>
+          <p className="text-gray-500">Swipe through the flow</p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-12">
-          <div className="space-y-8">
-            <p className="text-xl leading-relaxed text-black">
-              I'm feeling like
-              <span className="relative inline-block mx-2 min-w-[120px]">
-                <select
-                  className="appearance-none bg-transparent border-b border-gray-300 focus:border-black focus:outline-none px-1 py-0.5 pr-6 w-full"
-                  value={effort}
-                  onChange={(e) => setEffort(e.target.value)}
-                  required
-                >
-                  <option value="" disabled>
-                    select
-                  </option>
-                  {effortOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option.toLowerCase()}
-                    </option>
-                  ))}
-                </select>
-                <svg
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 pointer-events-none"
-                  width="12"
-                  height="6"
-                  viewBox="0 0 12 6"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M1 1L6 5L11 1"
-                    stroke="black"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </span>
-              today. I want to focus on
-              <span className="relative inline-block mx-2 min-w-[160px]">
-                <select
-                  className="appearance-none bg-transparent border-b border-gray-300 focus:border-black focus:outline-none px-1 py-0.5 pr-6 w-full"
-                  value={primaryFocus}
-                  onChange={(e) => setPrimaryFocus(e.target.value)}
-                  required
-                >
-                  <option value="" disabled>
-                    select area
-                  </option>
-                  {focusOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option.toLowerCase()}
-                    </option>
-                  ))}
-                </select>
-                <svg
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 pointer-events-none"
-                  width="12"
-                  height="6"
-                  viewBox="0 0 12 6"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M1 1L6 5L11 1"
-                    stroke="black"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </span>
-              {secondaryFocus ? (
-                <>
-                  with a little extra love for
-                  <span className="relative inline-block mx-2 min-w-[160px]">
-                    <select
-                      className="appearance-none bg-transparent border-b border-gray-300 focus:border-black focus:outline-none px-1 py-0.5 pr-6 w-full"
-                      value={secondaryFocus}
-                      onChange={(e) => setSecondaryFocus(e.target.value)}
-                    >
-                      <option value="" disabled>
-                        select area
-                      </option>
-                      {focusOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {option.toLowerCase()}
-                        </option>
-                      ))}
-                    </select>
-                    <svg
-                      className="absolute right-1 top-1/2 transform -translate-y-1/2 pointer-events-none"
-                      width="12"
-                      height="6"
-                      viewBox="0 0 12 6"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M1 1L6 5L11 1"
-                        stroke="black"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </span>
-                </>
-              ) : (
-                <span
-                  className="mx-2 text-gray-500 cursor-pointer hover:text-black transition-colors"
-                  onClick={() => setSecondaryFocus(" ")}
-                >
-                  + add secondary focus
-                </span>
-              )}
-              . I've got about
-              <span className="relative inline-block mx-2 min-w-[140px]">
-                <select
-                  className="appearance-none bg-transparent border-b border-gray-300 focus:border-black focus:outline-none px-1 py-0.5 pr-6 w-full"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  required
-                >
-                  <option value="" disabled>
-                    select time
-                  </option>
-                  {timeOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-                <svg
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 pointer-events-none"
-                  width="12"
-                  height="6"
-                  viewBox="0 0 12 6"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M1 1L6 5L11 1"
-                    stroke="black"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </span>
-              to train.
-            </p>
+        <div className="relative h-[400px] mb-8">
+          <div className="absolute top-0 left-0 w-full h-full">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={exercise.title}
+                initial={{ opacity: 0, x: 100 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -100 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                onDragEnd={handleDragEnd}
+                className="h-full w-full"
+              >
+                <div className="bg-gray-50 p-8 rounded-lg h-full">
+                  <div className="flex justify-between items-start mb-6">
+                    <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">{exercise.stage}</p>
+                    <span className="text-xs bg-gray-200 px-3 py-1 rounded-full">
+                      {current + 1}/{routineData.length}
+                    </span>
+                  </div>
+
+                  <h3 className="text-3xl font-normal text-black mb-2">{exercise.title}</h3>
+                  <p className="text-gray-500 mb-8">{exercise.duration}</p>
+
+                  <div className="space-y-4">
+                    {exercise.instructions.map((step, i) => (
+                      <div key={i} className="flex items-start">
+                        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-black text-white text-xs mr-3 mt-0.5">
+                          {i + 1}
+                        </span>
+                        <p className="text-black">{step}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
           </div>
+        </div>
 
-          <div className="space-y-3">
-            <label className="block text-lg font-normal text-black">Anything else you'd like to share?</label>
-            <textarea
-              className="w-full bg-gray-50 p-4 border-none focus:ring-0 focus:outline-none rounded-lg text-black resize-none"
-              placeholder="e.g. I've been sitting all day, want to loosen the hips."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={4}
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-black text-white px-8 py-3 rounded-full hover:bg-gray-800 transition-colors font-normal text-lg"
-          >
-            {loading ? (
-              <span className="flex items-center justify-center">
-                <Loader2 className="animate-spin mr-2 h-4 w-4" />
-                Generating...
-              </span>
-            ) : (
-              "Generate Routine"
-            )}
+        <div className="flex justify-between items-center">
+          <button onClick={prev} className="text-black px-4 py-2 hover:bg-gray-100 rounded-full transition-colors">
+            ← Previous
           </button>
-        </form>
+
+          <div className="flex space-x-1">
+            {routineData.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrent(i)}
+                className={`w-2 h-2 rounded-full ${i === current ? "bg-black" : "bg-gray-300"}`}
+                aria-label={`Go to exercise ${i + 1}`}
+              />
+            ))}
+          </div>
+
+          <button onClick={next} className="text-black px-4 py-2 hover:bg-gray-100 rounded-full transition-colors">
+            Next →
+          </button>
+        </div>
       </main>
     </div>
   )
 }
+
