@@ -8,36 +8,32 @@ export async function POST(req: Request) {
     const prompt = `
 You are a mobility coach trained in CARs, PAILs/RAILs, FRC, and fascia decompression.
 
-Based on the following inputs, generate a mobility routine:
+Generate a mobility routine based on:
 - Effort: ${effort}
-- Focus: ${primaryFocus}
-- Secondary: ${secondaryFocus}
+- Primary focus: ${primaryFocus}
+- Secondary focus: ${secondaryFocus}
 - Time: ${time}
 - Notes: ${notes}
 
-Please return ONLY a JSON array, like this:
+Respond with only a JSON array like this:
 [
   {
     "stage": "Warm-up",
     "title": "Seated Thoracic CARs",
     "duration": "2 mins",
-    "instructions": [
-      "Sit upright with neutral spine",
-      "Slowly rotate thoracic spine with breath",
-      "Avoid moving shoulders"
-    ]
+    "instructions": ["step 1", "step 2", "step 3"]
   },
   ...
 ]
 
-DO NOT include any explanations or extra text. Just the array.
+Do not include any extra text, explanation, or markdown.
     `;
 
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, // Make sure this is set in Vercel env vars
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
@@ -50,26 +46,22 @@ DO NOT include any explanations or extra text. Just the array.
     });
 
     const data = await res.json();
-
     const raw = data.choices?.[0]?.message?.content || "";
 
-    // Attempt to parse GPT's response as JSON
-    try {
-      const routine = JSON.parse(raw);
-      if (!Array.isArray(routine)) throw new Error("Not an array");
-      return NextResponse.json({ routine });
-    } catch (err) {
+    // 💡 Auto-extract JSON array if GPT includes extra text
+    const match = raw.match(/\[\s*{[\s\S]*}\s*\]/);
+    if (!match) {
       return NextResponse.json(
-        {
-          error: "OpenAI responded with unstructured data",
-          raw,
-        },
+        { error: "No JSON array found in GPT response", raw },
         { status: 500 }
       );
     }
+
+    const routine = JSON.parse(match[0]);
+    return NextResponse.json({ routine });
   } catch (error) {
     return NextResponse.json(
-      { error: "Something went wrong on the server." },
+      { error: "Server error", details: error },
       { status: 500 }
     );
   }
