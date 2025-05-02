@@ -1,33 +1,49 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from "next/server"
+
+export async function OPTIONS() {
+  return NextResponse.json({}, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    }
+  })
+}
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { effort, primaryFocus, secondaryFocus, time, notes } = body;
+    const body = await req.json()
+    const { effort, primaryFocus, secondaryFocus, time, notes } = body
 
     const prompt = `
-You are a mobility coach trained in CARs, PAILs/RAILs, FRC, and fascia decompression.
+You are a mobility coach trained in FRC, CARs, PAILs/RAILs, end-range strength, fascia decompression, and active joint control.
 
-Generate a mobility routine based on:
-- Effort: ${effort}
-- Primary focus: ${primaryFocus}
-- Secondary focus: ${secondaryFocus}
-- Time: ${time}
-- Notes: ${notes}
+Generate a personalized mobility routine based on the following inputs:
 
-Respond with ONLY a JSON array like this:
-[
-  {
-    "stage": "Warm-up",
-    "title": "Seated Thoracic CARs",
-    "duration": "2 mins",
-    "instructions": ["step 1", "step 2", "step 3"]
-  },
-  ...
-]
+- Effort Level: ${effort}
+- Primary Focus: ${primaryFocus}
+- Secondary Focus: ${secondaryFocus || "None"}
+- Time Available: ${time}
+- Notes: ${notes || "None"}
 
-Do not include any explanation or extra text.
-    `;
+Follow this structure:
+1. Exercise Name
+2. Duration or Sets/Reps
+3. Bullet-point instructions (clear, breath-led, concise)
+4. Optional: What should or shouldn’t be felt
+
+Include:
+- A warm-up
+- A main phase (based on effort level)
+- A short decompression or cooldown
+
+Avoid:
+- Yoga or passive stretching
+- General fitness routines
+
+Your response should be clean, structured, and ready to parse.
+    `.trim()
 
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -39,30 +55,35 @@ Do not include any explanation or extra text.
         model: "gpt-3.5-turbo",
         messages: [
           { role: "system", content: "You are a mobility coach." },
-          { role: "user", content: prompt },
+          { role: "user", content: prompt }
         ],
         temperature: 0.7,
       }),
-    });
+    })
 
-    const data = await res.json();
-    const raw = data.choices?.[0]?.message?.content || "";
+    const data = await res.json()
 
-    // Extract only the JSON array from the response
-    const match = raw.match(/\[\s*{[\s\S]*}\s*\]/);
-    if (!match) {
-      return NextResponse.json(
-        { error: "No JSON array found in GPT response", raw },
-        { status: 500 }
-      );
+    if (data.error) {
+      console.error("❌ OpenAI Error:", data.error.message)
+      return NextResponse.json({ error: data.error.message }, { status: 500 })
     }
 
-    const routine = JSON.parse(match[0]);
-    return NextResponse.json({ routine });
-  } catch (error) {
+    const result = data.choices?.[0]?.message?.content
+
+    if (!result || result.trim() === "") {
+      return NextResponse.json({ error: "Empty response from OpenAI" }, { status: 500 })
+    }
+
     return NextResponse.json(
-      { error: "Server error", details: error },
-      { status: 500 }
-    );
+      { routine: result },
+      {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        }
+      }
+    )
+  } catch (err) {
+    console.error("🔥 API call failed:", err)
+    return NextResponse.json({ error: "Something went wrong while generating the routine." }, { status: 500 })
   }
 }
