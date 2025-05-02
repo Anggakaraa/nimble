@@ -40,84 +40,89 @@ export default function Page() {
   }
 
   const focusOptions = ["hips", "knee & ankle", "shoulder & wrist", "spine"]
+  const timeOptions = ["<30 minutes", "30-45 minutes", ">45 minutes"]
+  const effortOptions = ["Restore", "Build", "Push"]
 
   return (
-    <div className="min-h-screen bg-white text-black px-6 py-12">
-      <h1 className="text-3xl font-bold mb-8">Let’s get 1% more nimble everyday!</h1>
+    <main className="min-h-screen bg-white px-6 py-16 flex flex-col justify-center items-center text-black">
+      <form onSubmit={handleSubmit} className="max-w-2xl w-full space-y-10 text-lg leading-relaxed">
+        <h1 className="text-4xl font-bold text-center">Let’s get 1% more nimble today</h1>
 
-      <form onSubmit={handleSubmit} className="space-y-6 max-w-xl">
-        <label>
-          I'm feeling like:{" "}
-          <select required value={effort} onChange={(e) => setEffort(e.target.value)} className="border p-1 ml-2">
-            <option value="">Select effort</option>
-            <option value="Restore">Restore</option>
-            <option value="Build">Build</option>
-            <option value="Push">Push</option>
-          </select>
-        </label>
+        <p className="text-center text-gray-600">Let's get 1% more nimble everyday!</p>
 
-        <br />
-
-        <label>
-          I want to focus on:{" "}
-          <select required value={primaryFocus} onChange={(e) => setPrimaryFocus(e.target.value)} className="border p-1 ml-2">
-            <option value="">Select area</option>
-            {focusOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
+        <p className="text-black">
+          I'm feeling like{" "}
+          <select
+            value={effort}
+            onChange={(e) => setEffort(e.target.value)}
+            required
+            className="underline bg-white border-b border-gray-300 focus:outline-none focus:border-black"
+          >
+            <option value="" disabled>select effort</option>
+            {effortOptions.map((option) => (
+              <option key={option} value={option}>{option.toLowerCase()}</option>
             ))}
-          </select>
-        </label>
-
-        <br />
-
-        <label>
-          Add secondary focus (optional):{" "}
-          <select value={secondaryFocus} onChange={(e) => setSecondaryFocus(e.target.value)} className="border p-1 ml-2">
-            <option value="">None</option>
+          </select>{" "}
+          today. I want to focus on{" "}
+          <select
+            value={primaryFocus}
+            onChange={(e) => setPrimaryFocus(e.target.value)}
+            required
+            className="underline bg-white border-b border-gray-300 focus:outline-none focus:border-black"
+          >
+            <option value="" disabled>primary area</option>
             {focusOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
+              <option key={option} value={option}>{option}</option>
             ))}
-          </select>
-        </label>
+          </select>{" "}
+          with a pinch of{" "}
+          <select
+            value={secondaryFocus}
+            onChange={(e) => setSecondaryFocus(e.target.value)}
+            className="underline bg-white border-b border-gray-300 focus:outline-none focus:border-black"
+          >
+            <option value="">none</option>
+            {focusOptions.map((option) => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select
+          >, and I have{" "}
+          <select
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            required
+            className="underline bg-white border-b border-gray-300 focus:outline-none focus:border-black"
+          >
+            <option value="" disabled>select time</option>
+            {timeOptions.map((option) => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>{" "}
+          to train.
+        </p>
 
-        <br />
-
-        <label>
-          I have:{" "}
-          <select required value={time} onChange={(e) => setTime(e.target.value)} className="border p-1 ml-2">
-            <option value="">Select time</option>
-            <option value="<30 minutes">&lt;30 minutes</option>
-            <option value="30-45 minutes">30–45 minutes</option>
-            <option value=">45 minutes">&gt;45 minutes</option>
-          </select>
-        </label>
-
-        <br />
-
-        <label className="block">
-          Anything else to share?
+        <div className="text-black">
+          <label className="block mb-2 text-lg font-medium">Anything else you'd like to share?</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="e.g. Been sitting all day..."
-            className="border mt-1 p-2 w-full"
+            placeholder="e.g. I've been sitting all day, want to loosen up the hips"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-black"
             rows={4}
           />
-        </label>
+        </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-black text-white px-6 py-2 rounded hover:bg-gray-800"
-        >
-          {loading ? "Generating..." : "Generate Routine"}
-        </button>
+        <div className="text-center">
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-black text-white px-6 py-3 rounded-full hover:bg-gray-800 transition-colors"
+          >
+            {loading ? "Generating..." : "Generate Routine →"}
+          </button>
+        </div>
       </form>
-    </div>
+    </main>
   )
 }
 
