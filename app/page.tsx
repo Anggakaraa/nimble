@@ -18,7 +18,7 @@ export default function Page() {
   const effortOptions = ["Restore", "Build", "Push"]
 
   // Use environment variable for API URL
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://your-default-api-url.vercel.app"
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://v0-nimble-app.vercel.app"
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
