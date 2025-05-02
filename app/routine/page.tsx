@@ -4,64 +4,35 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 
-const mockRoutine = [
-  {
-    stage: "Warm-up",
-    title: "Seated Thoracic CARs",
-    duration: "2 mins",
-    instructions: [
-      "Sit upright with neutral spine",
-      "Slowly rotate thoracic spine with breath",
-      "Avoid moving shoulders",
-    ],
-  },
-  {
-    stage: "Main",
-    title: "Standing Shoulder PAILs/RAILs",
-    duration: "3 sets • 10 sec holds",
-    instructions: ["Press hand into wall at end range", "Engage scapular control", "Switch to RAILs contraction"],
-  },
-  {
-    stage: "Cooldown",
-    title: "Supine Hip Windshield Wipers",
-    duration: "2 mins",
-    instructions: ["Lie down with knees bent", "Gently rotate knees side to side", "Exhale during each rotation"],
-  },
-]
-
 export default function RoutinePage() {
   const [current, setCurrent] = useState(0)
-  const [routineData, setRoutineData] = useState(mockRoutine)
-
-  const fetchRoutine = async () => {
-    try {
-      const res = await fetch("https://nimble-l8wmm3v0d-anggakaras-projects.vercel.app/api/generate-routine", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          effort: "Restore",
-          primaryFocus: "hips",
-          secondaryFocus: "shoulders",
-          time: "20 minutes",
-          notes: "I've been sitting all day",
-        }),
-      })
-
-      const data = await res.json()
-      if (Array.isArray(data.routine)) {
-        setRoutineData(data.routine)
-        setCurrent(0)
-      } else {
-        console.warn("No routine returned. Using mock. Raw response:", data)
-      }
-    } catch (error) {
-      console.error("Error fetching routine:", error)
-    }
-  }
+  const [routineData, setRoutineData] = useState<any[] | null>(null)
 
   useEffect(() => {
-    fetchRoutine()
+    const saved = localStorage.getItem("routineData")
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+
+        // Handle both structured array or string-based formats
+        if (typeof parsed === "string") {
+          // If OpenAI returned raw string instead of JSON
+          // You could split it or render in raw format
+          console.warn("Routine is a raw string:", parsed)
+        } else if (Array.isArray(parsed)) {
+          setRoutineData(parsed)
+        } else {
+          console.warn("Unexpected format:", parsed)
+        }
+      } catch (e) {
+        console.error("Failed to parse routineData:", e)
+      }
+    }
   }, [])
+
+  if (!routineData) {
+    return <p className="text-center text-gray-500 mt-20">Loading your routine...</p>
+  }
 
   const next = () => setCurrent((prev) => (prev + 1) % routineData.length)
   const prev = () => setCurrent((prev) => (prev - 1 + routineData.length) % routineData.length)
@@ -113,7 +84,7 @@ export default function RoutinePage() {
                   <p className="text-gray-500 mb-8">{exercise.duration}</p>
 
                   <div className="space-y-4">
-                    {exercise.instructions.map((step, i) => (
+                    {exercise.instructions?.map((step: string, i: number) => (
                       <div key={i} className="flex items-start">
                         <span className="flex items-center justify-center w-6 h-6 rounded-full bg-black text-white text-xs mr-3 mt-0.5">
                           {i + 1}
