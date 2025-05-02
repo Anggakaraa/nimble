@@ -6,23 +6,16 @@ import Link from "next/link"
 
 export default function RoutinePage() {
   const [current, setCurrent] = useState(0)
-  const [routineData, setRoutineData] = useState<any[] | null>(null)
+  const [routineData, setRoutineData] = useState<any | null>(null)
 
   useEffect(() => {
     const saved = localStorage.getItem("routineData")
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
-
-        // Handle both structured array or string-based formats
+        setRoutineData(parsed)
         if (typeof parsed === "string") {
-          // If OpenAI returned raw string instead of JSON
-          // You could split it or render in raw format
           console.warn("Routine is a raw string:", parsed)
-        } else if (Array.isArray(parsed)) {
-          setRoutineData(parsed)
-        } else {
-          console.warn("Unexpected format:", parsed)
         }
       } catch (e) {
         console.error("Failed to parse routineData:", e)
@@ -34,6 +27,23 @@ export default function RoutinePage() {
     return <p className="text-center text-gray-500 mt-20">Loading your routine...</p>
   }
 
+  // 🔍 TEMP: Show raw string output from OpenAI
+  if (typeof routineData === "string") {
+    return (
+      <div className="p-6 max-w-3xl mx-auto whitespace-pre-wrap text-black">
+        <header className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-medium">Nimble</h1>
+          <Link href="/" className="text-sm text-gray-500 hover:text-black transition-colors">
+            New Routine
+          </Link>
+        </header>
+        <h2 className="text-xl font-semibold mb-4">Your Routine</h2>
+        <pre className="bg-gray-50 p-4 rounded-lg">{routineData}</pre>
+      </div>
+    )
+  }
+
+  // If structured array, continue with swipe UI
   const next = () => setCurrent((prev) => (prev + 1) % routineData.length)
   const prev = () => setCurrent((prev) => (prev - 1 + routineData.length) % routineData.length)
   const exercise = routineData[current]
@@ -105,7 +115,7 @@ export default function RoutinePage() {
           </button>
 
           <div className="flex space-x-1">
-            {routineData.map((_, i) => (
+            {routineData.map((_: any, i: number) => (
               <button
                 key={i}
                 onClick={() => setCurrent(i)}
