@@ -15,6 +15,7 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
 }
 
 select {
@@ -27,6 +28,7 @@ select:focus {
   outline: none;
 }
 
+/* Mobile optimizations */
 @media (max-width: 640px) {
   p.text-xl {
     display: flex;
@@ -39,4 +41,38 @@ select:focus {
     margin: 0.5rem 0;
     width: 100%;
   }
+
+  /* Improve touch targets */
+  button,
+  select,
+  .cursor-pointer {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Improve swipe area */
+  .swipe-card {
+    touch-action: pan-y;
+    user-select: none;
+    cursor: grab;
+  }
+
+  .swipe-card:active {
+    cursor: grabbing;
+  }
+
+  /* Fix bottom navigation on mobile */
+  .bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Add smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Prevent content shift when scrollbar appears */
+html {
+  scrollbar-gutter: stable;
 }
